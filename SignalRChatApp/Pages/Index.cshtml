@@ -1,0 +1,55 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "ChatApp";
+}
+
+<canvas id="canvas" width="600" height="400" style="border:1px solid black;"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+
+  canvas.addEventListener('mousedown', (e) => {
+    drawing = true;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!drawing) return;
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    drawing = false;
+    cli()
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    drawing = false;
+  });
+
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+    connection.start().then(function () {
+        console.log("Connected!");
+    }).catch(function (err) {
+        console.error(err.toString());
+    });
+
+    connection.on("ReceiveMessage", function (dataURL, ConnectionId) {
+        const img = new Image();
+        img.onload = () => {
+        ctx.drawImage(img, 0, 0);
+        };
+        img.src = dataURL;
+    });
+
+  function cli(){
+    const dataURL = canvas.toDataURL();
+    connection.invoke("SendMessage", dataURL);
+  }
+</script>
